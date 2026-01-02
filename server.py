@@ -25,6 +25,7 @@ HOST = os.environ.get("OCR_HOST", "0.0.0.0")
 PORT = int(os.environ.get("OCR_PORT", "8080"))
 LOG_LEVEL = os.environ.get("OCR_LOG_LEVEL", "info")
 LANG = os.environ.get("OCR_LANG", "en")
+CPU_THREADS = int(os.environ.get("OCR_CPU_THREADS", "0"))  # 0 = auto-detect
 
 app = FastAPI(
     title="PaddleOCR Server",
@@ -188,12 +189,16 @@ def get_ocr_engine():
     global ocr_engine
     if ocr_engine is None:
         logger.info("Initializing PaddleOCR engine...")
-        ocr_engine = PaddleOCR(
-            lang=LANG,
-            use_textline_orientation=False,
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-        )
+        kwargs = {
+            "lang": LANG,
+            "use_textline_orientation": False,
+            "use_doc_orientation_classify": False,
+            "use_doc_unwarping": False,
+        }
+        if CPU_THREADS > 0:
+            kwargs["cpu_threads"] = CPU_THREADS
+            logger.info(f"Using {CPU_THREADS} CPU threads")
+        ocr_engine = PaddleOCR(**kwargs)
         logger.info("PaddleOCR engine initialized successfully!")
     return ocr_engine
 
@@ -203,13 +208,17 @@ def get_layout_engine():
     global layout_engine
     if layout_engine is None:
         logger.info("Initializing PPStructureV3 layout engine...")
-        layout_engine = PPStructureV3(
-            lang=LANG,
-            use_formula_recognition=False,
-            use_table_recognition=True,
-            use_textline_orientation=False,
-            use_chart_recognition=False,
-        )
+        kwargs = {
+            "lang": LANG,
+            "use_formula_recognition": False,
+            "use_table_recognition": True,
+            "use_textline_orientation": False,
+            "use_chart_recognition": False,
+        }
+        if CPU_THREADS > 0:
+            kwargs["cpu_threads"] = CPU_THREADS
+            logger.info(f"Using {CPU_THREADS} CPU threads for layout engine")
+        layout_engine = PPStructureV3(**kwargs)
         logger.info("PPStructureV3 layout engine initialized successfully!")
     return layout_engine
 
