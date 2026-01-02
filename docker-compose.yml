@@ -1,0 +1,22 @@
+services:
+  paddleocr-server:
+    build: .
+    image: paddleocr-server
+    container_name: paddleocr-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${USERPROFILE:-.}/.paddlex:/root/.paddlex
+    environment:
+      - OCR_HOST=0.0.0.0
+      - OCR_PORT=8080
+      - OCR_LOG_LEVEL=info
+      - OCR_LANG=en
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
