@@ -30,7 +30,8 @@ curl http://localhost:8080/health
 
 - **OCR Text Extraction** - Extract text with bounding boxes and confidence scores
 - **Layout Analysis** - Document structure analysis with table recognition (PPStructureV3)
-- **GPU Acceleration** - NVIDIA CUDA 12.9 support for fast inference
+- **GPU Acceleration** - NVIDIA CUDA 11.8 + TensorRT 8.6 support for fast inference
+- **High Performance Inference (HPI)** - Optional TensorRT acceleration for maximum throughput
 - **REST API** - Simple JSON endpoints for easy integration
 - **Multiple Formats** - Supports base64-encoded images and image URLs
 
@@ -76,7 +77,10 @@ curl -X POST http://localhost:8080/ocr \
 | `OCR_PORT` | `8080` | Server port |
 | `OCR_LOG_LEVEL` | `info` | Log level (debug, info, warning, error) |
 | `OCR_LANG` | `en` | OCR language (en, ch, japan, korean, etc.) |
-| `OCR_CPU_THREADS` | `0` | CPU threads to use (0 = auto-detect, CPU version only) |
+| `OCR_CPU_THREADS` | `0` | CPU threads (0 = auto-detect, CPU version only) |
+| `OCR_ENABLE_HIGH_INFERENCE` | `false` | Enable HPI (High Performance Inference) with TensorRT |
+| `OCR_USE_TENSORRT` | `false` | Enable TensorRT acceleration (GPU only) |
+| `OCR_PRECISION` | `fp32` | Inference precision (`fp16` or `fp32`) |
 
 ### Custom Configuration
 
@@ -86,13 +90,15 @@ docker run -d \
   -p 9000:9000 \
   -e OCR_PORT=9000 \
   -e OCR_LANG=ch \
+  -e OCR_ENABLE_HIGH_INFERENCE=true \
+  -e OCR_USE_TENSORRT=true \
   jarvis1tube/paddleocr-server:gpu
 ```
 
 ## Requirements
 
 **GPU version:**
-- NVIDIA GPU with CUDA 12.9+ support
+- NVIDIA GPU with CUDA 11.8+ support
 - Docker with NVIDIA Container Toolkit
 
 **CPU version:**
@@ -100,7 +106,7 @@ docker run -d \
 
 ## Tags
 
-- `latest`, `gpu` - GPU version with CUDA 12.9 support
+- `latest`, `gpu` - GPU version with CUDA 11.8 + TensorRT 8.6 support
 - `cpu` - CPU version (no GPU required)
 
 ## Links

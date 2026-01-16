@@ -146,6 +146,10 @@ Configure the server using environment variables:
 | `OCR_PORT` | `8080` | Server port |
 | `OCR_LOG_LEVEL` | `info` | Logging level (debug, info, warning, error) |
 | `OCR_LANG` | `en` | OCR language (en, ch, japan, korean, etc.) |
+| `OCR_CPU_THREADS` | `0` | CPU threads (0 = auto-detect, CPU version only) |
+| `OCR_ENABLE_HIGH_INFERENCE` | `false` | Enable HPI (High Performance Inference) with TensorRT |
+| `OCR_USE_TENSORRT` | `false` | Enable TensorRT acceleration (GPU only) |
+| `OCR_PRECISION` | `fp32` | Inference precision (`fp16` or `fp32`) |
 
 **Example:**
 ```bash
@@ -154,13 +158,15 @@ docker run -d \
   -p 9000:9000 \
   -e OCR_PORT=9000 \
   -e OCR_LANG=ch \
+  -e OCR_ENABLE_HIGH_INFERENCE=true \
+  -e OCR_USE_TENSORRT=true \
   paddleocr-server
 ```
 
 ## Requirements
 
 - Docker with NVIDIA Container Toolkit (for GPU support)
-- NVIDIA GPU with CUDA 12.9+ support
+- NVIDIA GPU with CUDA 11.8+ support
 
 ## Project Structure
 

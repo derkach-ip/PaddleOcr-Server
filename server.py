@@ -6,8 +6,9 @@ Provides complete OCR with text extraction
 
 import base64
 import io
+import logging
 import os
-from logging import getLogger
+import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -18,7 +19,12 @@ import uvicorn
 import numpy as np
 from PIL import Image
 
-logger = getLogger(__name__)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # Configuration from environment variables
 HOST = os.environ.get("OCR_HOST", "0.0.0.0")
@@ -26,6 +32,10 @@ PORT = int(os.environ.get("OCR_PORT", "8080"))
 LOG_LEVEL = os.environ.get("OCR_LOG_LEVEL", "info")
 LANG = os.environ.get("OCR_LANG", "en")
 CPU_THREADS = int(os.environ.get("OCR_CPU_THREADS", "0"))  # 0 = auto-detect
+
+ENABLE_HIGH_INFER = os.environ.get("OCR_ENABLE_HIGH_INFERENCE", "false").lower() == "true"
+USE_TENSORRT = os.environ.get("OCR_USE_TENSORRT", "false").lower() == "true"
+PRECISION = os.environ.get("OCR_PRECISION", None)  # "fp16" or "fp32"
 
 app = FastAPI(
     title="PaddleOCR Server",
@@ -194,7 +204,11 @@ def get_ocr_engine():
             "use_textline_orientation": False,
             "use_doc_orientation_classify": False,
             "use_doc_unwarping": False,
+            "enable_hpi": ENABLE_HIGH_INFER,  # HPI requires TensorRT
+            "use_tensorrt": USE_TENSORRT,
         }
+        if PRECISION:
+            kwargs["precision"] = PRECISION
         if CPU_THREADS > 0:
             kwargs["cpu_threads"] = CPU_THREADS
             logger.info(f"Using {CPU_THREADS} CPU threads")
@@ -214,7 +228,11 @@ def get_layout_engine():
             "use_table_recognition": True,
             "use_textline_orientation": False,
             "use_chart_recognition": False,
+            "enable_hpi": ENABLE_HIGH_INFER,
+            "use_tensorrt": USE_TENSORRT,
         }
+        if PRECISION:
+            kwargs["precision"] = PRECISION
         if CPU_THREADS > 0:
             kwargs["cpu_threads"] = CPU_THREADS
             logger.info(f"Using {CPU_THREADS} CPU threads for layout engine")
@@ -238,7 +256,11 @@ async def perform_ocr(request: OCRRequest) -> list[OCRPageResult]:
     try:
         engine = get_ocr_engine()
         img = load_image_from_request(request.file)
+
+        start_time = time.perf_counter()
         result = engine.predict(img)
+        predict_time_ms = (time.perf_counter() - start_time) * 1000
+        print(f"[TIMING] OCR predict took {predict_time_ms:.2f}ms", flush=True)
 
         results = []
         for r in result:
@@ -269,7 +291,12 @@ async def perform_layout(request: OCRRequest) -> list[LayoutPageResult]:
     try:
         engine = get_layout_engine()
         img = load_image_from_request(request.file)
+
+        start_time = time.perf_counter()
         result = engine.predict(img)
+        predict_time_ms = (time.perf_counter() - start_time) * 1000
+        print(f"[TIMING] Layout predict took {predict_time_ms:.2f}ms", flush=True)
+
         return [LayoutPageResult(**x._to_json()) for x in result]
     except Exception as e:
         logger.error(f"Layout processing failed: {str(e)}")

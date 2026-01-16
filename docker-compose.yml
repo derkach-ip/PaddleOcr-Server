@@ -1,7 +1,7 @@
 services:
   paddleocr-server:
     build: .
-    image: paddleocr-server
+    image: jarvis1tube/paddleocr-server:gpu
     container_name: paddleocr-server
     ports:
       - "8080:8080"
@@ -12,6 +12,9 @@ services:
       - OCR_PORT=8080
       - OCR_LOG_LEVEL=info
       - OCR_LANG=en
+      - OCR_ENABLE_HIGH_INFERENCE=true
+      - OCR_USE_TENSORRT=true
+      - OCR_PRECISION=fp32
     deploy:
       resources:
         reservations:
